@@ -1,8 +1,12 @@
 ﻿#pragma once
+
+#include <queue>
 #include "afxdialogex.h"
+#include "CSafeQueue.h"
 
-
-// CConverter 대화 상자
+#define DEFAULT_THREAD_NUM 3
+#define MAX_THREAD_NUM 5
+#define NEWLINE "\n"
 
 class CConverter : public CDialogEx
 {
@@ -12,20 +16,26 @@ public:
 	CConverter(CWnd* pParent /*=nullptr*/, const CString& input, const CString& output, const CString& save);
 	virtual ~CConverter();
 
-// 대화 상자 데이터입니다.
 #ifdef AFX_DESIGN_TIME
 	enum { IDD = IDD_DIALOG_CONVERT };
 #endif
 
 protected:
-	virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV 지원입니다.
+	virtual void DoDataExchange(CDataExchange* pDX);
+	virtual BOOL OnInitDialog();
 
 	DECLARE_MESSAGE_MAP()
 
-private:
-	CString inputPath;
-	CString outputPath;
-	CString savePath;
 public:
 	afx_msg void OnBnClickedOk();
+
+public:
+	CString mInputPath;
+	CString mOutputPath;
+	CString mSavePath;
+	CSafeQueue<CString> mJobQueue;
+	CWinThread* mProducer;
+	std::vector<CWinThread*> mConsumerVector;
+	BOOL mStopSignal;
+	BOOL mQuitSignal;
 };

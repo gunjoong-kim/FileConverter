@@ -243,7 +243,8 @@ void CFileConverterDlg::OnBnClickedOk()
 	GetDlgItem(IDC_EDIT_SAVE)->GetWindowTextW(savePath);
 
 	this->ShowWindow(SW_HIDE);
-	CConverter converterWindow(nullptr, inputPath, outputPath, savePath);
+	// if \가 붙어 있다면??
+	CConverter converterWindow(nullptr, inputPath + _T("\\"), outputPath + _T("\\"), savePath + _T("\\"));
 	converterWindow.DoModal();
 	this->ShowWindow(SW_SHOW);
 }

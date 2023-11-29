@@ -184,6 +184,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CConverter.h" />
+    <ClInclude Include="CSafeQueue.h" />
     <ClInclude Include="FileConverter.h" />
     <ClInclude Include="FileConverterDlg.h" />
     <ClInclude Include="framework.h" />

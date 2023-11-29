@@ -32,13 +32,15 @@ protected:
 	afx_msg void OnPaint();
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
-private:
-	CFont m_title_font;
-	CFont m_general_font;
+
 public:
 	afx_msg void OnBnClickedButtonOutput();
 	afx_msg void OnBnClickedButtonSave();
 	afx_msg void OnBnClickedButtonInput();
 	afx_msg void OnBnClickedCancel();
 	afx_msg void OnBnClickedOk();
+
+private:
+	CFont m_title_font;
+	CFont m_general_font;
 };
