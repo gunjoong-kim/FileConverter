@@ -14,10 +14,27 @@ CConverter::CConverter(CWnd* pParent /*=nullptr*/, const CString& input, const C
     , mStopSignal(false)
     , mQuitSignal(false)
 {
+	mPParam.inputPath = mInputPath;
+	mPParam.bQuitSignal = FALSE;
+	mPParam.bStopSignal = FALSE;
+	mPParam.jobQueue = &mJobQueue;
+	for (int i = 0; i < DEFAULT_THREAD_NUM; i++)
+	{
+		conParam tmp;
+		tmp.inputPath = mInputPath;
+		tmp.outputPath = mOutputPath;
+		tmp.savePath = mSavePath;
+		tmp.handle = WM_UPDATE_THREAD1 + i;
+		tmp.bQuitSignal = FALSE;
+		tmp.bStopSignal = FALSE;
+		tmp.jobQueue = &mJobQueue;
+		mCParamVector.push_back(tmp);
+	}
 }
 
 CConverter::~CConverter()
 {		
+
 }
 
 BOOL CheckHeader(CString header, CString& outFileName)
@@ -141,8 +158,7 @@ BOOL ConvertBinToTxt(CString outputPath, CString filePath)
 
 UINT Produce(LPVOID pParam)
 {
-    CConverter* data = reinterpret_cast<CConverter*>(pParam);
-
+	proParam* data = reinterpret_cast<proParam*>(pParam);
   //  while (!data->mQuitSignal)
   //  {
 		//CFileFind finder;
@@ -161,7 +177,7 @@ UINT Produce(LPVOID pParam)
 		//Sleep(1000);
   //  }
 	CFileFind finder;
-	CString searchPath = data->mInputPath + _T("\\*.*");
+	CString searchPath = data->inputPath + _T("\\*.*");
 	BOOL bWorking = finder.FindFile(searchPath);
 	while (bWorking)
 	{
@@ -169,7 +185,7 @@ UINT Produce(LPVOID pParam)
 		if (finder.IsDots() || finder.IsDirectory())
 			continue;
 		//ciritical section!!!
-		data->mJobQueue.Enqueue(finder.GetFileName());
+		data->jobQueue->Enqueue(finder.GetFileName());
 	}
 	finder.Close();
 	Sleep(1000);
@@ -178,28 +194,43 @@ UINT Produce(LPVOID pParam)
 
 UINT Consume(LPVOID pParam)
 {
-	CConverter* data = reinterpret_cast<CConverter*>(pParam);
-
+	threadInfo msg;
+	msg.status = THREAD_WAIT_STR;
+	msg.success = 0;
+	msg.failure = 0;
+	conParam* data = reinterpret_cast<conParam*>(pParam);
 	DWORD threadID = GetCurrentThreadId();
-
+	BOOL ret;
 	// ID를 문자열로 변환
 	CString threadIDString;
 	threadIDString.Format(_T("%lu"), threadID);
-
-	while (!data->mQuitSignal)
+	msg.status = THREAD_WAIT_STR;
+	PostMessage(data->hWnd, data->handle, 0, reinterpret_cast<LPARAM>(&msg));
+	while (!data->bQuitSignal)
 	{
-		//대기 UI
-		CString fileName = data->mJobQueue.Dequeue();
-		CString filePath = data->mInputPath + fileName;
-		//AfxMessageBox(CString("변환 시작 : ") + fileName);
+		CString fileName = data->jobQueue->Dequeue();
+		CString filePath = data->inputPath + fileName;
+
+		msg.status = THREAD_CONVERT_STR;
+		PostMessage(data->hWnd, data->handle, 0, reinterpret_cast<LPARAM>(&msg));
 		if (fileName.Right(5) == _T(".abin"))
-			ConvertBinToTxt(data->mOutputPath, filePath);
+			ret = ConvertBinToTxt(data->outputPath, filePath);
 		else if (fileName.Right(5) == _T(".atxt"))
-			ConvertTxtToBin(data->mOutputPath, filePath);
+			ret = ConvertTxtToBin(data->outputPath, filePath);
+		if (ret == TRUE)
+		{
+			msg.status = THREAD_SUCCESS_STR;
+			msg.success++;
+		}
 		else
-			continue;
-		//AfxMessageBox(CString("변환 완료 : ") + fileName);
-		//Sleep(2000);
+		{
+			msg.status = THREAD_FAILURE_STR;
+			msg.failure++;
+		}
+		PostMessage(data->hWnd, data->handle, 0, reinterpret_cast<LPARAM>(&msg));
+		Sleep(2000);
+		msg.status = THREAD_WAIT_STR;
+		PostMessage(data->hWnd, data->handle, 0, reinterpret_cast<LPARAM>(&msg));
 	}
     return 0;
 }
@@ -228,9 +259,13 @@ BOOL CConverter::OnInitDialog()
 		}
 	}
 
-	mProducer = AfxBeginThread(Produce, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL);
+	SetWindowPos(&wndTop, 1000, 600, DLG_WIDTH, DLG_HEIGHT, SWP_SHOWWINDOW);
+	mProducer = AfxBeginThread(Produce, &mPParam, THREAD_PRIORITY_NORMAL, 0, 0, NULL);
 	for (int i = 0; i < DEFAULT_THREAD_NUM; i++)
-		mConsumerVector.push_back(AfxBeginThread(Consume, this, THREAD_PRIORITY_NORMAL, 0, 0, NULL));
+	{
+		mCParamVector[i].hWnd = GetSafeHwnd();
+		mConsumerVector.push_back(AfxBeginThread(Consume, &mCParamVector[i], THREAD_PRIORITY_NORMAL, 0, 0, NULL));
+	}
 
     return TRUE;
 }
@@ -238,19 +273,78 @@ BOOL CConverter::OnInitDialog()
 void CConverter::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_GROUP_THREADS, mGroupThreads);
+	DDX_Control(pDX, IDC_GROUP_THREAD1, mGroupThread1);
+	DDX_Control(pDX, IDC_GROUP_THREAD2, mGroupThread2);
+	DDX_Control(pDX, IDC_GROUP_THREAD3, mGroupThread3);
+	DDX_Control(pDX, IDC_BUTTON_TADD, mBtnThreadAdd);
+	DDX_Control(pDX, IDC_STATUS_THREAD1, mStatusThread1);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD1, mSuccessThread1);
+	DDX_Control(pDX, IDC_FAILURE_THREAD1, mFailureThread1);
+	DDX_Control(pDX, IDC_STATUS_THREAD2, mStatusThread2);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD2, mSuccessThread2);
+	DDX_Control(pDX, IDC_FAILURE_THREAD2, mFailureThread2);
+	DDX_Control(pDX, IDC_STATUS_THREAD3, mStatusThread3);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD3, mSuccessThread3);
+	DDX_Control(pDX, IDC_FAILURE_THREAD3, mFailureThread3);
 }
 
 
 BEGIN_MESSAGE_MAP(CConverter, CDialogEx)
-	ON_BN_CLICKED(IDOK, &CConverter::OnBnClickedOk)
+	ON_BN_CLICKED(IDCANCEL, &CConverter::OnBnClickedCancel)
+	ON_BN_CLICKED(IDSTOP, &CConverter::OnBnClickedStop)
+	ON_MESSAGE(WM_UPDATE_THREAD1, &CConverter::OnUpdateThread1)
+	ON_MESSAGE(WM_UPDATE_THREAD2, &CConverter::OnUpdateThread2)
+	ON_MESSAGE(WM_UPDATE_THREAD3, &CConverter::OnUpdateThread3)
 END_MESSAGE_MAP()
 
 
 // CConverter 메시지 처리기
 
-
-void CConverter::OnBnClickedOk()
+void CConverter::OnBnClickedCancel()
 {
-	// TODO: 여기에 컨트롤 알림 처리기 코드를 추가합니다.
+	mQuitSignal = TRUE;
+	CDialogEx::OnCancel();
+}
+
+void CConverter::OnBnClickedStop()
+{
 	AfxMessageBox(mInputPath + mOutputPath + mSavePath);
+	mStopSignal = TRUE;
+}
+
+
+LRESULT CConverter::OnUpdateThread1(WPARAM wParam, LPARAM lParam)
+{
+	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
+	mStatusThread1.SetWindowText(info->status);
+	CString num;
+	num.Format(_T("%d"), info->success);
+	mSuccessThread1.SetWindowText(CString("성공수량 : ") + num);
+	num.Format(_T("%d"), info->failure);
+	mFailureThread1.SetWindowText(CString("실패수량 : ") + num);
+	return 0;
+}
+
+LRESULT CConverter::OnUpdateThread2(WPARAM wParam, LPARAM lParam)
+{
+	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
+	mStatusThread2.SetWindowText(info->status);
+	CString num;
+	num.Format(_T("%d"), info->success);
+	mSuccessThread2.SetWindowText(CString("성공수량 : ") + num);
+	num.Format(_T("%d"), info->failure);
+	mFailureThread2.SetWindowText(CString("실패수량 : ") + num);
+	return 0;
+}
+LRESULT CConverter::OnUpdateThread3(WPARAM wParam, LPARAM lParam)
+{
+	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
+	mStatusThread1.SetWindowText(info->status);
+	CString num;
+	num.Format(_T("%d"), info->success);
+	mSuccessThread3.SetWindowText(CString("성공수량 : ") + num);
+	num.Format(_T("%d"), info->failure);
+	mFailureThread3.SetWindowText(CString("실패수량 : ") + num);
+	return 0;
 }

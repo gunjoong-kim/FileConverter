@@ -59,6 +59,18 @@ CFileConverterDlg::CFileConverterDlg(CWnd* pParent /*=nullptr*/)
 void CFileConverterDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_TEXT_INPUT, mTextInputPath);
+	DDX_Control(pDX, IDC_TEXT_OUTPUT, mTextOutputPath);
+	DDX_Control(pDX, IDC_TEXT_SAVE, mTextSavePath);
+	DDX_Control(pDX, IDC_EDIT_INPUT, mEditInputPath);
+	DDX_Control(pDX, IDC_EDIT_OUTPUT, mEditOutputPath);
+	DDX_Control(pDX, IDC_EDIT_SAVE, mEditSavePath);
+	DDX_Control(pDX, IDC_BUTTON_INPUT, mBtnInputFolder);
+	DDX_Control(pDX, IDC_BUTTON_OUTPUT, mBtnOutputFolder);
+	DDX_Control(pDX, IDC_BUTTON_SAVE, mBtnSaveFolder);
+	DDX_Control(pDX, IDCANCEL, mBtnCancel);
+	DDX_Control(pDX, IDC_TEXT_TITLE, mTextTitle);
+	DDX_Control(pDX, IDOK, mBtnOk);
 }
 
 BEGIN_MESSAGE_MAP(CFileConverterDlg, CDialogEx)
@@ -105,34 +117,38 @@ BOOL CFileConverterDlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// 작은 아이콘을 설정합니다.
 
 	// TODO: 여기에 추가 초기화 작업을 추가합니다.'
-	LOGFONT Logfont;
+	LOGFONT logFont;
+	mTextTitle.GetFont()->GetLogFont(&logFont);
+	logFont.lfHeight = 150;
+	mTitleFont.CreateFontIndirect(&logFont);
+	mTextTitle.SetFont(&mTitleFont);
+	mTextTitle.MoveWindow(130, 200, 900, 155);
+;
+	mTextInputPath.GetFont()->GetLogFont(&logFont);
+	logFont.lfHeight = 40;
+	mTextFont.CreateFontIndirectW(&logFont);
 
-	GetDlgItem(IDC_TEXT_TITLE)->GetFont()->GetLogFont(&Logfont);
-	Logfont.lfHeight = 150;
-	m_title_font.CreateFontIndirect(&Logfont);
-	GetDlgItem(IDC_TEXT_TITLE)->SetFont(&m_title_font);
-	GetDlgItem(IDC_TEXT_TITLE)->MoveWindow(130, 200, 900, 155);
+	mTextInputPath.SetFont(&mTextFont);
+	mTextInputPath.MoveWindow(130, 400, 150, 40);
 
-	GetDlgItem(IDC_TEXT_INPUT)->GetFont()->GetLogFont(&Logfont);
-	Logfont.lfHeight = 40;
-	m_general_font.CreateFontIndirectW(&Logfont);
+	mTextOutputPath.SetFont(&mTextFont);
+	mTextOutputPath.MoveWindow(130, 450, 150, 40);
 
-	GetDlgItem(IDC_TEXT_INPUT)->SetFont(&m_general_font);
-	GetDlgItem(IDC_TEXT_INPUT)->MoveWindow(130, 400, 150, 40);
+	mTextSavePath.SetFont(&mTextFont);
+	mTextSavePath.MoveWindow(130, 500, 150, 40);
 
-	GetDlgItem(IDC_TEXT_OUTPUT)->SetFont(&m_general_font);
-	GetDlgItem(IDC_TEXT_OUTPUT)->MoveWindow(130, 450, 150, 40);
+	mEditInputPath.MoveWindow(280, 400, 550, 45);
+	mEditOutputPath.MoveWindow(280, 450, 550, 45);
+	mEditSavePath.MoveWindow(280, 500, 550, 45);
 
-	GetDlgItem(IDC_TEXT_SAVE)->SetFont(&m_general_font);
-	GetDlgItem(IDC_TEXT_SAVE)->MoveWindow(130, 500, 150, 40);
-
-	GetDlgItem(IDC_EDIT_INPUT)->MoveWindow(280, 400, 400, 45);
-	GetDlgItem(IDC_EDIT_OUTPUT)->MoveWindow(280, 450, 400, 45);
-	GetDlgItem(IDC_EDIT_SAVE)->MoveWindow(280, 500, 400, 45);
-
-	GetDlgItem(IDC_BUTTON_INPUT)->MoveWindow(700, 400, 100, 45);
-	GetDlgItem(IDC_BUTTON_OUTPUT)->MoveWindow(700, 450, 100, 45);
-	GetDlgItem(IDC_BUTTON_SAVE)->MoveWindow(700, 500, 100, 45);
+	logFont.lfHeight = 30;
+	mBtnFont.CreateFontIndirectW(&logFont);
+	mBtnInputFolder.SetFont(&mBtnFont);
+	mBtnInputFolder.MoveWindow(850, 400, 100, 45);
+	mBtnOutputFolder.SetFont(&mBtnFont);
+	mBtnOutputFolder.MoveWindow(850, 450, 100, 45);
+	mBtnSaveFolder.SetFont(&mBtnFont);
+	mBtnSaveFolder.MoveWindow(850, 500, 100, 45);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -196,7 +212,7 @@ void CFileConverterDlg::OnBnClickedButtonOutput()
 	if (Picker.DoModal() == IDOK)
 	{
 		CString outputPath = Picker.GetPathName();
-		GetDlgItem(IDC_EDIT_OUTPUT)->SetWindowText(outputPath);
+		mEditOutputPath.SetWindowTextW(outputPath);
 	}
 }
 
@@ -209,7 +225,7 @@ void CFileConverterDlg::OnBnClickedButtonSave()
 	if (Picker.DoModal() == IDOK)
 	{
 		CString savePath = Picker.GetPathName();
-		GetDlgItem(IDC_EDIT_SAVE)->SetWindowText(savePath);
+		mEditSavePath.SetWindowTextW(savePath);
 	}
 }
 
@@ -222,7 +238,7 @@ void CFileConverterDlg::OnBnClickedButtonInput()
 	if (Picker.DoModal() == IDOK)
 	{
 		CString inputPath = Picker.GetPathName();
-		GetDlgItem(IDC_EDIT_INPUT)->SetWindowText(inputPath);
+		mEditInputPath.SetWindowTextW(inputPath);
 	}
 }
 
@@ -235,16 +251,16 @@ void CFileConverterDlg::OnBnClickedCancel()
 
 void CFileConverterDlg::OnBnClickedOk()
 {
-	CString inputPath;
-	CString outputPath;
-	CString savePath;
-	GetDlgItem(IDC_EDIT_INPUT)->GetWindowText(inputPath);
-	GetDlgItem(IDC_EDIT_OUTPUT)->GetWindowText(outputPath);
-	GetDlgItem(IDC_EDIT_SAVE)->GetWindowTextW(savePath);
+	// Debug Setting
+	CString inputPath("C:\\Users\\김건중\\Documents\\INPUT\\");
+	CString outputPath("C:\\Users\\김건중\\Documents\\OUTPUT\\");
+	CString savePath("C:\\Users\\김건중\\Documents\\OUTPUT\\");
+	//GetDlgItem(IDC_EDIT_INPUT)->GetWindowText(inputPath);
+	//GetDlgItem(IDC_EDIT_OUTPUT)->GetWindowText(outputPath);
+	//GetDlgItem(IDC_EDIT_SAVE)->GetWindowTextW(savePath);
 
 	this->ShowWindow(SW_HIDE);
-	// if \가 붙어 있다면??
-	CConverter converterWindow(nullptr, inputPath + _T("\\"), outputPath + _T("\\"), savePath + _T("\\"));
+	CConverter converterWindow(nullptr, inputPath, outputPath, savePath);
 	converterWindow.DoModal();
 	this->ShowWindow(SW_SHOW);
 }

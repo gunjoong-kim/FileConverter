@@ -6,6 +6,9 @@
 
 #include "CConverter.h"
 
+#define DLG_WIDTH 1200
+#define DLG_HEIGHT 900
+
 // CFileConverterDlg 대화 상자
 class CFileConverterDlg : public CDialogEx
 {
@@ -41,6 +44,21 @@ public:
 	afx_msg void OnBnClickedOk();
 
 private:
-	CFont m_title_font;
-	CFont m_general_font;
+	CFont mTitleFont;
+	CFont mTextFont;
+	CFont mBtnFont;
+
+private:
+	CStatic mTextInputPath;
+	CStatic mTextOutputPath;
+	CStatic mTextSavePath;
+	CEdit mEditInputPath;
+	CEdit mEditOutputPath;
+	CEdit mEditSavePath;
+	CButton mBtnInputFolder;
+	CButton mBtnOutputFolder;
+	CButton mBtnSaveFolder;
+	CButton mBtnOk;
+	CButton mBtnCancel;
+	CStatic mTextTitle;
 };
