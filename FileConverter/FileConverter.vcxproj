@@ -183,8 +183,12 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CBinToTxtConverter.h" />
+    <ClInclude Include="CConsumer.h" />
     <ClInclude Include="CConverter.h" />
+    <ClInclude Include="CProducer.h" />
     <ClInclude Include="CSafeQueue.h" />
+    <ClInclude Include="CTxtToBinConverter.h" />
     <ClInclude Include="FileConverter.h" />
     <ClInclude Include="FileConverterDlg.h" />
     <ClInclude Include="framework.h" />
@@ -193,7 +197,11 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CBinToTxtConverter.cpp" />
+    <ClCompile Include="CConsumer.cpp" />
     <ClCompile Include="CConverter.cpp" />
+    <ClCompile Include="CProducer.cpp" />
+    <ClCompile Include="CTxtToBinConverter.cpp" />
     <ClCompile Include="FileConverter.cpp" />
     <ClCompile Include="FileConverterDlg.cpp" />
     <ClCompile Include="pch.cpp">

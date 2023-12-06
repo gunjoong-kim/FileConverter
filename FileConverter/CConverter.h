@@ -3,10 +3,13 @@
 #include <queue>
 #include "afxdialogex.h"
 #include "CSafeQueue.h"
+#include "CBinToTxtConverter.h"
+#include "CTxtToBinConverter.h"
+#include "CConsumer.h"
+#include "CProducer.h"
 
 #define DEFAULT_THREAD_NUM 3
 #define MAX_THREAD_NUM 5
-#define NEWLINE "\n"
 
 #define DLG_WIDTH 1200
 #define DLG_HEIGHT 900
@@ -14,38 +17,6 @@
 #define WM_UPDATE_THREAD1 (WM_USER + 1)
 #define WM_UPDATE_THREAD2 (WM_USER + 2)
 #define WM_UPDATE_THREAD3 (WM_USER + 3)
-
-#define THREAD_WAIT_STR "상태 : 대기중"
-#define THREAD_CONVERT_STR "상태 : 변환중"
-#define THREAD_SUCCESS_STR "상태 : 성공"
-#define THREAD_FAILURE_STR "상태 : 실패"
- 
-typedef struct threadInfo
-{
-	CString status;
-	int success;
-	int failure;
-} threadInfo;
-
-typedef struct ConsumerParam
-{
-	CString inputPath;
-	CString outputPath;
-	CString savePath;
-	HWND hWnd;
-	UINT handle;
-	BOOL bQuitSignal;
-	BOOL bStopSignal;
-	CSafeQueue<CString>* jobQueue;
-} conParam;
-
-typedef struct ProducerParam
-{
-	CString inputPath;
-	BOOL bQuitSignal;
-	BOOL bStopSignal;
-	CSafeQueue<CString>* jobQueue;
-} proParam;
 
 class CConverter : public CDialogEx
 {
@@ -77,12 +48,12 @@ public:
 	CString mOutputPath;
 	CString mSavePath;
 	CSafeQueue<CString> mJobQueue;
-	CWinThread* mProducer;
-	std::vector<CWinThread*> mConsumerVector;
+	CWinThread* mProducerThread;
+	std::vector<CWinThread*> mConsumerThreads;
+	CProducer* mProducer;
+	std::vector<CConsumer*> mConsumers;
 	BOOL mStopSignal;
 	BOOL mQuitSignal;
-	proParam mPParam;
-	std::vector<conParam> mCParamVector;
 
 private:
 	CStatic mGroupThreads;
