@@ -8,6 +8,7 @@
 #define IDD_FILECONVERTER_DIALOG        102
 #define IDR_MAINFRAME                   128
 #define IDD_DIALOG_CONVERT              130
+#define IDD_DIALOG1                     132
 #define IDC_TEXT_TITLE                  1000
 #define IDC_TEXT_INPUT                  1001
 #define IDC_TEXT_OUTPUT                 1002
@@ -33,14 +34,23 @@
 #define IDC_SUCCESS_THREAD3             1028
 #define IDC_FAILURE_THREAD3             1029
 #define IDC_BUTTON_TADD                 1030
+#define IDC_BTN_START                   1031
+#define IDC_BTN_FIND                    1033
+#define IDC_LIST_CONTENT                1034
+#define IDC_BTN_REFRESH                 1035
+#define IDC_GROUP_VIEWER                1037
+#define IDC_LIST_FILE                   1039
+#define IDC_EDIT_CONTENT                1040
+#define IDREFRESH                       1041
+#define IDC_LIST_ERR                    1043
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1031
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

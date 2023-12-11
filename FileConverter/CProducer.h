@@ -4,7 +4,7 @@
 class CProducer
 {
 public:
-	CProducer(CSafeQueue<CString>* jobQueue, CString& inputPath);
+	CProducer(CSafeQueue<CString>* jobQueue, CString& inputDir);
 	~CProducer();
 	void Stop();
 	void Quit();
@@ -13,7 +13,7 @@ public:
 	UINT Run();
 private:
 	CSafeQueue<CString>* mJobQueue;
-	CString mInputPath;
+	CString mInputDir;
 	BOOL mBQuitSignal;
 	BOOL mBStopSignal;
 };

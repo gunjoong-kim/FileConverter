@@ -4,10 +4,10 @@
 
 #include "AConsumer.h"
 
-class CBinToTxtConverter : public AConsumer
+class CBiConverter : public AConsumer
 {
 public:
-	CBinToTxtConverter(
+	CBiConverter(
 		CSafeQueue<CString>* jobQueue,
 		CString& inputDir,
 		CString& outputDir,
@@ -15,9 +15,9 @@ public:
 		HWND hwnd,
 		UINT handle
 	) : AConsumer(jobQueue, inputDir, outputDir, saveDir, hwnd, handle) {}
-
 	virtual converterInfo Do(const CString& inputFullPath);
 
 private:
-	converterInfo Convert(const CString& inputFullPath);
+	converterInfo ConvertBinToTxt(const CString& inputFullPath);
+	converterInfo ConvertTxtToBin(const CString& inputFullPath);
 };

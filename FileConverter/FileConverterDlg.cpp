@@ -144,11 +144,11 @@ BOOL CFileConverterDlg::OnInitDialog()
 	logFont.lfHeight = 30;
 	mBtnFont.CreateFontIndirectW(&logFont);
 	mBtnInputFolder.SetFont(&mBtnFont);
-	mBtnInputFolder.MoveWindow(850, 400, 100, 45);
+	mBtnInputFolder.MoveWindow(850, 400, 150, 45);
 	mBtnOutputFolder.SetFont(&mBtnFont);
-	mBtnOutputFolder.MoveWindow(850, 450, 100, 45);
+	mBtnOutputFolder.MoveWindow(850, 450, 150, 45);
 	mBtnSaveFolder.SetFont(&mBtnFont);
-	mBtnSaveFolder.MoveWindow(850, 500, 100, 45);
+	mBtnSaveFolder.MoveWindow(850, 500, 150, 45);
 
 	return TRUE;  // 포커스를 컨트롤에 설정하지 않으면 TRUE를 반환합니다.
 }
@@ -248,17 +248,40 @@ void CFileConverterDlg::OnBnClickedCancel()
 	CDialogEx::OnCancel();
 }
 
+bool DoesFolderExist(const CString& folderPath)
+{
+	CFileFind finder;
+	return finder.FindFile(folderPath) != 0 && finder.IsDirectory();
+}
 
 void CFileConverterDlg::OnBnClickedOk()
 {
 	// Debug Setting
 	CString inputPath("C:\\Users\\김건중\\Documents\\INPUT\\");
 	CString outputPath("C:\\Users\\김건중\\Documents\\OUTPUT\\");
-	CString savePath("C:\\Users\\김건중\\Documents\\OUTPUT\\");
+	CString savePath("C:\\Users\\김건중\\Documents\\SAVE\\");
+	//CString inputPath;
+	//CString outputPath;
+	//CString savePath;
 	//GetDlgItem(IDC_EDIT_INPUT)->GetWindowText(inputPath);
 	//GetDlgItem(IDC_EDIT_OUTPUT)->GetWindowText(outputPath);
 	//GetDlgItem(IDC_EDIT_SAVE)->GetWindowTextW(savePath);
 
+	/*if (DoesFolderExist(inputPath) == FALSE)
+	{
+		AfxMessageBox(_T("정확하지 않은 입력경로 입니다.")); 
+		return;
+	}
+	if (DoesFolderExist(outputPath) == FALSE)
+	{
+		AfxMessageBox(_T("정확하지 않은 출력경로 입니다."));
+		return;
+	}
+	if (DoesFolderExist(savePath) == FALSE)
+	{
+		AfxMessageBox(_T("정확하지 않은 보관경로 입니다."));
+		return;
+	}*/
 	this->ShowWindow(SW_HIDE);
 	CConverter converterWindow(nullptr, inputPath, outputPath, savePath);
 	converterWindow.DoModal();
