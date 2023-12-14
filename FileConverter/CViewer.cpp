@@ -8,20 +8,15 @@ UINT CViewer::ViewTxt(CString& filePath, CEdit& contentBox)
     if (file.Open(filePath, CFile::modeRead | CFile::typeBinary))
     {
         ULONGLONG fileSize = file.GetLength();
-        LPSTR fileContent = new CHAR[fileSize + 1];
+        wchar_t* fileContent = new wchar_t[fileSize / sizeof(wchar_t) + 1];
         file.Read(fileContent, fileSize);
-        fileContent[fileSize] = '\0';  // Null-terminate the content
-
+        fileContent[fileSize / sizeof(wchar_t)] = L'\0';
         file.Close();
 
-        // Assuming the file is UTF-8 encoded
-        CStringA utf8Content(fileContent);
+        CString content(fileContent);
+        OutputDebugString(content);
         delete[] fileContent;
-
-        // Convert UTF-8 to Unicode
-        CStringW unicodeContent(utf8Content);
-
-        contentBox.SetWindowText(unicodeContent);
+        contentBox.SetWindowText(content);
         return 0;
     }
     else
@@ -47,13 +42,19 @@ UINT CViewer::ViewBin(CString& filePath, CEdit& contentBox)
         while (bytesRead = file.Read(buffer, blockSize))
         {
             // 읽은 바이트를 CString에 추가
-            for (int i = 0; i < blockSize; i++)
+            for (int i = 0; i < bytesRead; i++)
             {
                 binary.Format(_T("%02X "), buffer[i]);
                 fileContent += binary;
             }
             fileContent += _T("\r\n");
         }
+        for (int i = 0; i < bytesRead; i++)
+        {
+            binary.Format(_T("%02X "), buffer[i]);
+            fileContent += binary;
+        }
+        fileContent += _T("\r\n");
         contentBox.SetWindowText(fileContent);
         file.Close();
         return 0;

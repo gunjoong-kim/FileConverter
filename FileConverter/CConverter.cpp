@@ -13,10 +13,15 @@ CConverter::CConverter(CWnd* pParent /*=nullptr*/, const CString& input, const C
 	, mSaveDir(save)
     , mStopSignal(false)
     , mQuitSignal(false)
+	, mThreadCnt(3)
 {}
 
 CConverter::~CConverter()
-{}
+{
+	delete mProducer;
+	for (int i = 0; i < mConsumers.size(); i++)
+		delete mConsumers[i];
+}
 
 UINT Produce(LPVOID pParam)
 {
@@ -36,107 +41,65 @@ BOOL CConverter::OnInitDialog()
 {
 	CDialogEx::OnInitDialog();
 
-	// 시스템 메뉴에 "정보..." 메뉴 항목을 추가합니다.
-
-	// IDM_ABOUTBOX는 시스템 명령 범위에 있어야 합니다.
-	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
-	ASSERT(IDM_ABOUTBOX < 0xF000);
-
-	CMenu* pSysMenu = GetSystemMenu(FALSE);
-	if (pSysMenu != nullptr)
-	{
-		BOOL bNameValid;
-		CString strAboutMenu;
-		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
-		ASSERT(bNameValid);
-		if (!strAboutMenu.IsEmpty())
-		{
-			pSysMenu->AppendMenu(MF_SEPARATOR);
-			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
-		}
-	}
-
 	LOGFONT logFont;
-
-	SetWindowPos(&wndTop, 400, 300, DLG_WIDTH, DLG_HEIGHT, SWP_SHOWWINDOW);
-
-	//for (int i = 0; i < 3; i++)
-	//{
-	//	monitors[i] = new ThreadMonitor;
-	//	monitors[i]->id = i;
-	//	monitors[i]->Group = 
-	//}
-
-
-
-	mGroupThreads.MoveWindow(20, 0, THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT);
-	mBtnStart.MoveWindow(15 + THREADS_BOX_WIDTH - BTN_WIDTH, 30, BTN_WIDTH, BTN_HEIGHT);
-	mBtnStop.MoveWindow(15 + THREADS_BOX_WIDTH - BTN_WIDTH * 2, 30, BTN_WIDTH, BTN_HEIGHT);
-
-	mGroupViewer.MoveWindow(THREADS_BOX_WIDTH + 40, 0, VIEWER_BOX_WIDTH, VIEWER_BOX_HEIGHT);
-	mBtnFind.MoveWindow(THREADS_BOX_WIDTH + 50, 60, BTN_WIDTH, BTN_HEIGHT);
-	mBtnRefresh.MoveWindow(THREADS_BOX_WIDTH + 50, 70 + BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
-	mListFile.MoveWindow(THREADS_BOX_WIDTH + 60 + BTN_WIDTH, 60, 900, 150);
-	mEditContent.MoveWindow(THREADS_BOX_WIDTH + 50, 230, VIEWER_BOX_WIDTH - 40, 1050);
-
-	mGroupThread1.MoveWindow(50, 60, THREAD_BOX_WIDTH, THREAD_BOX_HEIGHT);
-	mStatusThread1.MoveWindow(60, 60 + THREAD_BOX_HEIGHT / 2, STATIC_WIDTH, STATIC_HEIGHT);
-	mSuccessThread1.MoveWindow(280, 60 + THREAD_BOX_HEIGHT / 2, STATIC_WIDTH, STATIC_HEIGHT);
-	mFailureThread1.MoveWindow(500, 60 + THREAD_BOX_HEIGHT / 2, STATIC_WIDTH, STATIC_HEIGHT);
-
-	mGroupThread2.MoveWindow(50, 85 + THREAD_BOX_HEIGHT, THREAD_BOX_WIDTH, THREAD_BOX_HEIGHT);
-	mStatusThread2.MoveWindow(60, 85 + THREAD_BOX_HEIGHT * 1.5, STATIC_WIDTH, STATIC_HEIGHT);
-	mSuccessThread2.MoveWindow(280, 85 + THREAD_BOX_HEIGHT * 1.5, STATIC_WIDTH, STATIC_HEIGHT);
-	mFailureThread2.MoveWindow(500, 85 + THREAD_BOX_HEIGHT * 1.5, STATIC_WIDTH, STATIC_HEIGHT);
-
-	mGroupThread3.MoveWindow(50, 100 + THREAD_BOX_HEIGHT * 2, THREAD_BOX_WIDTH, THREAD_BOX_HEIGHT);
-	mStatusThread3.MoveWindow(60, 100 + THREAD_BOX_HEIGHT * 2.5, STATIC_WIDTH, STATIC_HEIGHT);
-	mSuccessThread3.MoveWindow(280, 100 + THREAD_BOX_HEIGHT * 2.5, STATIC_WIDTH, STATIC_HEIGHT);
-	mFailureThread3.MoveWindow(500, 100 + THREAD_BOX_HEIGHT * 2.5, STATIC_WIDTH, STATIC_HEIGHT);
-	
-	mBtnInput.MoveWindow(DLG_WIDTH / 2, THREADS_BOX_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
-	mBtnOutput.MoveWindow(BTN_WIDTH + 10 + DLG_WIDTH / 2, THREADS_BOX_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
-	mBtnSave.MoveWindow((BTN_WIDTH + 10) * 2 + DLG_WIDTH / 2, THREADS_BOX_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
-	mBtnCancle.MoveWindow((BTN_WIDTH + 10) * 3 + DLG_WIDTH / 2, THREADS_BOX_HEIGHT - BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
 
 	mGroupThreads.GetFont()->GetLogFont(&logFont);
 	logFont.lfHeight = TITLE_FONT_SIZE;
 	mTitleFont.CreateFontIndirect(&logFont);
-	mGroupThreads.SetFont(&mTitleFont);
-	mGroupViewer.SetFont(&mTitleFont);
-	mGroupThread1.SetFont(&mTitleFont);
-	mGroupThread2.SetFont(&mTitleFont);
-	mGroupThread3.SetFont(&mTitleFont);
 	logFont.lfHeight = TEXT_FONT_SIZE;
 	mTextFont.CreateFontIndirect(&logFont);
-	mStatusThread1.SetFont(&mTextFont);
-	mSuccessThread1.SetFont(&mTextFont);
-	mFailureThread1.SetFont(&mTextFont);
-	mStatusThread2.SetFont(&mTextFont);
-	mSuccessThread2.SetFont(&mTextFont);
-	mFailureThread2.SetFont(&mTextFont);
-	mStatusThread3.SetFont(&mTextFont);
-	mSuccessThread3.SetFont(&mTextFont);
-	mFailureThread3.SetFont(&mTextFont);
-	mListFile.SetFont(&mTextFont);
-	mEditContent.SetFont(&mTextFont);
 	logFont.lfHeight = BTN_FONT_SIZE;
 	mBtnFont.CreateFontIndirect(&logFont);
+
+	mGroupThreads.SetFont(&mTitleFont);
+	mGroupViewer.SetFont(&mTitleFont);
+	mListFile.SetFont(&mTextFont);
+	mEditContent.SetFont(&mTextFont);
+
 	mBtnInput.SetFont(&mBtnFont);
 	mBtnOutput.SetFont(&mBtnFont);
 	mBtnSave.SetFont(&mBtnFont);
-	mBtnStart.SetFont(&mBtnFont);
-	mBtnStop.SetFont(&mBtnFont);
 	mBtnCancle.SetFont(&mBtnFont);
 	mBtnFind.SetFont(&mBtnFont);
 	mBtnRefresh.SetFont(&mBtnFont);
+	mBtnAdd.SetFont(&mBtnFont);
+	mBtnModify.SetFont(&mBtnFont);
 
-	std::locale::global(std::locale("kor_KOR.949"));
+	DragAcceptFiles(TRUE);
+	SetWindowPos(&wndTop, 400, 300, DLG_WIDTH, DLG_HEIGHT, SWP_SHOWWINDOW);
+
+	mGroupThreads.MoveWindow(20, 0, THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT);
+	mBtnAdd.MoveWindow(15 + THREADS_BOX_WIDTH - BTN_WIDTH, 30, BTN_WIDTH, BTN_HEIGHT);
+
+	mGroupViewer.MoveWindow(THREADS_BOX_WIDTH + 40, 0, VIEWER_BOX_WIDTH, VIEWER_BOX_HEIGHT);
+	mBtnFind.MoveWindow(THREADS_BOX_WIDTH + 50, 60, BTN_WIDTH, BTN_HEIGHT);
+	mBtnRefresh.MoveWindow(THREADS_BOX_WIDTH + 50, 70 + BTN_HEIGHT, BTN_WIDTH, BTN_HEIGHT);
+	mBtnModify.MoveWindow(THREADS_BOX_WIDTH + 50, 80 + BTN_HEIGHT * 2, BTN_WIDTH, BTN_HEIGHT);
+	mListFile.MoveWindow(THREADS_BOX_WIDTH + 60 + BTN_WIDTH, 60, 900, 150);
+	mEditContent.MoveWindow(THREADS_BOX_WIDTH + 50, 230, VIEWER_BOX_WIDTH - 40, 1100);
+	mBtnInput.MoveWindow((BTN_WIDTH + 10) * 3 + THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT - BTN_HEIGHT - 10, BTN_WIDTH, BTN_HEIGHT);
+	mBtnOutput.MoveWindow((BTN_WIDTH + 10) * 4 + THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT - BTN_HEIGHT - 10, BTN_WIDTH, BTN_HEIGHT);
+	mBtnSave.MoveWindow((BTN_WIDTH + 10) * 5 + THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT - BTN_HEIGHT - 10, BTN_WIDTH, BTN_HEIGHT);
+	mBtnCancle.MoveWindow((BTN_WIDTH + 10) * 6 + THREADS_BOX_WIDTH, THREADS_BOX_HEIGHT - BTN_HEIGHT - 10, BTN_WIDTH, BTN_HEIGHT);
+
+	for (int i = 0; i < MAX_THREAD_NUM; i++)
+	{
+		mGroupThread[i].MoveWindow(50, 60 + (25 + THREAD_BOX_HEIGHT) * i, THREAD_BOX_WIDTH, THREAD_BOX_HEIGHT);
+		mFNameThread[i].MoveWindow(60, 60 + THREAD_BOX_HEIGHT / 2 + (25 + THREAD_BOX_HEIGHT) * i - STATIC_HEIGHT, STATIC_WIDTH * 3, STATIC_HEIGHT * 2);
+		mStatusThread[i].MoveWindow(60, 60 + THREAD_BOX_HEIGHT / 2 + (25 + THREAD_BOX_HEIGHT) * i + STATIC_HEIGHT, STATIC_WIDTH, STATIC_HEIGHT);
+		mSuccessThread[i].MoveWindow(280, 60 + THREAD_BOX_HEIGHT / 2 + (25 + THREAD_BOX_HEIGHT) * i + STATIC_HEIGHT, STATIC_WIDTH, STATIC_HEIGHT);
+		mFailureThread[i].MoveWindow(500, 60 + THREAD_BOX_HEIGHT / 2 + (25 + THREAD_BOX_HEIGHT) * i + STATIC_HEIGHT, STATIC_WIDTH, STATIC_HEIGHT);
+		mGroupThread[i].SetFont(&mTitleFont);
+		mStatusThread[i].SetFont(&mTextFont);
+		mSuccessThread[i].SetFont(&mTextFont);
+		mFailureThread[i].SetFont(&mTextFont);
+		mFNameThread[i].SetFont(&mTextFont);
+	}
 
 	mProducer = new CProducer(&mJobQueue, mInputDir);
 	HWND hwnd = GetSafeHwnd();
 	for (int i = 0; i < DEFAULT_THREAD_NUM; i++)
-		mConsumers.push_back(new CBiConverter(&mJobQueue, mInputDir, mOutputDir, mSaveDir, hwnd, WM_UPDATE_THREAD1 + i));
+		mConsumers.push_back(new CBiConverter(i, &mJobQueue, mInputDir, mOutputDir, mSaveDir, hwnd, WM_UPDATE_THREAD1 + i));
 
 	mProducerThread = AfxBeginThread(Produce, mProducer, THREAD_PRIORITY_NORMAL, 0, 0, NULL);
 	for (int i = 0; i < DEFAULT_THREAD_NUM; i++)
@@ -149,52 +112,94 @@ void CConverter::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Control(pDX, IDC_GROUP_THREADS, mGroupThreads);
-	DDX_Control(pDX, IDC_GROUP_THREAD1, mGroupThread1);
-	DDX_Control(pDX, IDC_GROUP_THREAD2, mGroupThread2);
-	DDX_Control(pDX, IDC_GROUP_THREAD3, mGroupThread3);
-	DDX_Control(pDX, IDC_STATUS_THREAD1, mStatusThread1);
-	DDX_Control(pDX, IDC_SUCCESS_THREAD1, mSuccessThread1);
-	DDX_Control(pDX, IDC_FAILURE_THREAD1, mFailureThread1);
-	DDX_Control(pDX, IDC_STATUS_THREAD2, mStatusThread2);
-	DDX_Control(pDX, IDC_SUCCESS_THREAD2, mSuccessThread2);
-	DDX_Control(pDX, IDC_FAILURE_THREAD2, mFailureThread2);
-	DDX_Control(pDX, IDC_STATUS_THREAD3, mStatusThread3);
-	DDX_Control(pDX, IDC_SUCCESS_THREAD3, mSuccessThread3);
-	DDX_Control(pDX, IDC_FAILURE_THREAD3, mFailureThread3);
+	DDX_Control(pDX, IDC_GROUP_THREAD1, mGroupThread[0]);
+	DDX_Control(pDX, IDC_GROUP_THREAD2, mGroupThread[1]);
+	DDX_Control(pDX, IDC_GROUP_THREAD3, mGroupThread[2]);
+	DDX_Control(pDX, IDC_GROUP_THREAD4, mGroupThread[3]);
+	DDX_Control(pDX, IDC_GROUP_THREAD5, mGroupThread[4]);
+	DDX_Control(pDX, IDC_GROUP_THREAD6, mGroupThread[5]);
+	DDX_Control(pDX, IDC_STATUS_THREAD1, mStatusThread[0]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD1, mSuccessThread[0]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD1, mFailureThread[0]);
+	DDX_Control(pDX, IDC_STATUS_THREAD2, mStatusThread[1]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD2, mSuccessThread[1]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD2, mFailureThread[1]);
+	DDX_Control(pDX, IDC_STATUS_THREAD3, mStatusThread[2]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD3, mSuccessThread[2]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD3, mFailureThread[2]);
+	DDX_Control(pDX, IDC_STATUS_THREAD4, mStatusThread[3]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD4, mSuccessThread[3]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD4, mFailureThread[3]);
+	DDX_Control(pDX, IDC_STATUS_THREAD5, mStatusThread[4]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD5, mSuccessThread[4]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD5, mFailureThread[4]);
+	DDX_Control(pDX, IDC_STATUS_THREAD6, mStatusThread[5]);
+	DDX_Control(pDX, IDC_SUCCESS_THREAD6, mSuccessThread[5]);
+	DDX_Control(pDX, IDC_FAILURE_THREAD6, mFailureThread[5]);
+	DDX_Control(pDX, IDC_FNAME_THREAD1, mFNameThread[0]);
+	DDX_Control(pDX, IDC_FNAME_THREAD2, mFNameThread[1]);
+	DDX_Control(pDX, IDC_FNAME_THREAD3, mFNameThread[2]);
+	DDX_Control(pDX, IDC_FNAME_THREAD4, mFNameThread[3]);
+	DDX_Control(pDX, IDC_FNAME_THREAD5, mFNameThread[4]);
+	DDX_Control(pDX, IDC_FNAME_THREAD6, mFNameThread[5]);
 	DDX_Control(pDX, IDC_BUTTON_INPUT, mBtnInput);
 	DDX_Control(pDX, IDC_BUTTON_OUTPUT, mBtnOutput);
 	DDX_Control(pDX, IDC_BUTTON_SAVE, mBtnSave);
-	DDX_Control(pDX, IDSTOP, mBtnStop);
 	DDX_Control(pDX, IDCANCEL, mBtnCancle);
-	DDX_Control(pDX, IDC_BTN_START, mBtnStart);
 	DDX_Control(pDX, IDC_BTN_FIND, mBtnFind);
 	DDX_Control(pDX, IDC_BTN_REFRESH, mBtnRefresh);
 	DDX_Control(pDX, IDC_GROUP_VIEWER, mGroupViewer);
 	DDX_Control(pDX, IDC_LIST_FILE, mListFile);
 	DDX_Control(pDX, IDC_EDIT_CONTENT, mEditContent);
+	DDX_Control(pDX, IDC_BTN_ADD, mBtnAdd);
+	DDX_Control(pDX, IDC_BTN_MODIFY, mBtnModify);
 }
 
-
 BEGIN_MESSAGE_MAP(CConverter, CDialogEx)
+	ON_WM_DROPFILES()
 	ON_BN_CLICKED(IDCANCEL, &CConverter::OnBnClickedCancel)
 	ON_BN_CLICKED(IDSTOP, &CConverter::OnBnClickedStop)
-	ON_MESSAGE(WM_UPDATE_THREAD1, &CConverter::OnUpdateThread1)
-	ON_MESSAGE(WM_UPDATE_THREAD2, &CConverter::OnUpdateThread2)
-	ON_MESSAGE(WM_UPDATE_THREAD3, &CConverter::OnUpdateThread3)
+	ON_MESSAGE(WM_UPDATE_THREAD1, &CConverter::OnUpdateThread)
+	ON_MESSAGE(WM_UPDATE_THREAD2, &CConverter::OnUpdateThread)
+	ON_MESSAGE(WM_UPDATE_THREAD3, &CConverter::OnUpdateThread)
+	ON_MESSAGE(WM_UPDATE_THREAD4, &CConverter::OnUpdateThread)
+	ON_MESSAGE(WM_UPDATE_THREAD5, &CConverter::OnUpdateThread)
+	ON_MESSAGE(WM_UPDATE_THREAD6, &CConverter::OnUpdateThread)
 	ON_BN_CLICKED(IDC_BTN_FIND, &CConverter::OnBnClickedBtnFind)
 	ON_BN_CLICKED(IDC_BTN_REFRESH, &CConverter::OnBnClickedBtnRefresh)
 	ON_LBN_SELCHANGE(IDC_LIST_FILE, &CConverter::OnClickedFile)
-	ON_STN_CLICKED(IDC_FAILURE_THREAD1, &CConverter::OnStnClickedFailureThread1)
-	ON_STN_CLICKED(IDC_FAILURE_THREAD2, &CConverter::OnStnClickedFailureThread2)
-	ON_STN_CLICKED(IDC_FAILURE_THREAD3, &CConverter::OnStnClickedFailureThread3)
+	ON_COMMAND_RANGE(IDC_FAILURE_THREAD1, IDC_FAILURE_THREAD6, OnStnClickedFailureThread)
+	ON_BN_CLICKED(IDC_BTN_ADD, &CConverter::OnBnClickedBtnAdd)
+	ON_BN_CLICKED(IDC_BUTTON_INPUT, &CConverter::OnBnClickedButtonInput)
+	ON_BN_CLICKED(IDC_BUTTON_OUTPUT, &CConverter::OnBnClickedButtonOutput)
+	ON_BN_CLICKED(IDC_BUTTON_SAVE, &CConverter::OnBnClickedButtonSave)
+	ON_BN_CLICKED(IDC_BTN_MODIFY, &CConverter::OnBnClickedBtnModify)
 END_MESSAGE_MAP()
 
 
 // CConverter 메시지 처리기
 
+void CConverter::OnDropFiles(HDROP hDropInfo)
+{
+	UINT nFiles = DragQueryFile(hDropInfo, 0xFFFFFFFF, NULL, 0);
+
+	for (UINT i = 0; i < nFiles; ++i)
+	{
+		TCHAR szFilePath[MAX_PATH] = { 0 };
+		DragQueryFile(hDropInfo, i, szFilePath, MAX_PATH);
+		mJobQueue.Enqueue(szFilePath);
+	}
+
+	DragFinish(hDropInfo);
+
+	CDialog::OnDropFiles(hDropInfo);
+}
+
 void CConverter::OnBnClickedCancel()
 {
-	mQuitSignal = TRUE;
+	for (int i = 0; i < mConsumerThreads.size(); i++)
+		TerminateThread(mConsumerThreads[i], 0);
+	TerminateThread(mProducerThread, 0);
 	CDialogEx::OnCancel();
 }
 
@@ -204,40 +209,16 @@ void CConverter::OnBnClickedStop()
 	mStopSignal = TRUE;
 }
 
-
-
-LRESULT CConverter::OnUpdateThread1(WPARAM wParam, LPARAM lParam)
+LRESULT CConverter::OnUpdateThread(WPARAM wParam, LPARAM lParam)
 {
 	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
-	mStatusThread1.SetWindowText(info->status);
+	mStatusThread[info->idx].SetWindowText(info->status);
 	CString num;
 	num.Format(_T("%d"), info->success);
-	mSuccessThread1.SetWindowText(CString("성공수량 : ") + num);
+	mSuccessThread[info->idx].SetWindowText(_T("성공수량 : ") + num);
 	num.Format(_T("%d"), info->failure);
-	mFailureThread1.SetWindowText(CString("실패수량 : ") + num);
-	return 0;
-}
-
-LRESULT CConverter::OnUpdateThread2(WPARAM wParam, LPARAM lParam)
-{
-	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
-	mStatusThread2.SetWindowText(info->status);
-	CString num;
-	num.Format(_T("%d"), info->success);
-	mSuccessThread2.SetWindowText(CString("성공수량 : ") + num);
-	num.Format(_T("%d"), info->failure);
-	mFailureThread2.SetWindowText(CString("실패수량 : ") + num);
-	return 0;
-}
-LRESULT CConverter::OnUpdateThread3(WPARAM wParam, LPARAM lParam)
-{
-	threadInfo* info = reinterpret_cast<threadInfo*>(lParam);
-	mStatusThread3.SetWindowText(info->status);
-	CString num;
-	num.Format(_T("%d"), info->success);
-	mSuccessThread3.SetWindowText(CString("성공수량 : ") + num);
-	num.Format(_T("%d"), info->failure);
-	mFailureThread3.SetWindowText(CString("실패수량 : ") + num);
+	mFailureThread[info->idx].SetWindowText(_T("실패수량 : ") + num);
+	mFNameThread[info->idx].SetWindowTextW(_T("파일이름 : ") + info->fileName);
 	return 0;
 }
 
@@ -291,32 +272,85 @@ void CConverter::OnClickedFile()
 		CString fileName;
 		mListFile.GetText(selectedIndex, fileName);
 		CString filePath = mViewerDir + _T("\\") + fileName;
-		CString extend = fileName.Right(5);
-		if (extend == ".atxt")
+		CString extension = GetExtension(filePath);
+		if (extension == "atxt" || extension == "log")
 			CViewer::ViewTxt(filePath, mEditContent);
-		else if (extend == ".abin")
+		else if (extension == "abin")
 			CViewer::ViewBin(filePath, mEditContent);
 		else
-			mEditContent.SetWindowTextW(_T("atxt, abin 파일을 열어주세요."));
+			mEditContent.SetWindowTextW(_T("atxt, abin, log 파일을 열어주세요."));
 	}
 	else
 		mEditContent.SetWindowText(_T("올바르지 않은 파일입니다."));
 }
 
-void CConverter::OnStnClickedFailureThread1()
+void CConverter::OnBnClickedBtnModify()
 {
-	ErrListDlg errListWindow(nullptr, &(mConsumers[0]->mErrList));
+	int selectedIndex = mListFile.GetCurSel();
+	if (selectedIndex != LB_ERR) {
+		CString fileName;
+		mListFile.GetText(selectedIndex, fileName);
+		CString filePath = mViewerDir + _T("\\") + fileName;
+		CString extension = GetExtension(filePath);
+		if (extension == _T("atxt"))
+		{
+			CString content;
+			mEditContent.GetWindowText(content);
+
+			CStdioFile file;
+			if (file.Open(filePath, CFile::modeReadWrite | CFile::typeBinary))
+			{
+				file.SeekToBegin();
+				file.WriteString(content);
+				file.Close();
+			}
+		}
+		else
+		{
+			AfxMessageBox(_T("atxt 파일만 수정할 수 있습니다."));
+		}
+	}
+}
+
+void CConverter::OnStnClickedFailureThread(UINT nID)
+{
+	int index = nID - IDC_FAILURE_THREAD1;
+	if (index >= mThreadCnt)
+		return;
+	ErrListDlg errListWindow(nullptr, &(mConsumers[index]->mErrList));
 	errListWindow.DoModal();
 }
 
-void CConverter::OnStnClickedFailureThread2()
+void CConverter::OnBnClickedBtnAdd()
 {
-	ErrListDlg errListWindow(nullptr, &(mConsumers[1]->mErrList));
-	errListWindow.DoModal();
+	if (mThreadCnt == MAX_THREAD_NUM)
+	{
+		AfxMessageBox(_T("더 이상 스레드를 추가할 수 없습니다."));
+		return;
+	}
+	CString caption;
+	caption.Format(_T("Thread%d : 활성화"), mThreadCnt + 1);
+	mGroupThread[mThreadCnt].SetWindowText(caption);
+	HWND hwnd = GetSafeHwnd();
+	mConsumers.push_back(new CBiConverter(mThreadCnt, &mJobQueue, mInputDir, mOutputDir, mSaveDir, hwnd, WM_UPDATE_THREAD1 + mThreadCnt));
+	mConsumerThreads.push_back(AfxBeginThread(Consume, mConsumers[mThreadCnt], THREAD_PRIORITY_NORMAL, 0, 0, NULL));
+	mThreadCnt++;
 }
 
-void CConverter::OnStnClickedFailureThread3()
+
+void CConverter::OnBnClickedButtonInput()
 {
-	ErrListDlg errListWindow(nullptr, &(mConsumers[2]->mErrList));
-	errListWindow.DoModal();
+	ShellExecute(NULL, _T("open"), mInputDir, NULL, NULL, SW_SHOWNORMAL);
+}
+
+
+void CConverter::OnBnClickedButtonOutput()
+{
+	ShellExecute(NULL, _T("open"), mOutputDir, NULL, NULL, SW_SHOWNORMAL);
+}
+
+
+void CConverter::OnBnClickedButtonSave()
+{
+	ShellExecute(NULL, _T("open"), mSaveDir, NULL, NULL, SW_SHOWNORMAL);
 }

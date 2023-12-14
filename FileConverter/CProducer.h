@@ -1,20 +1,19 @@
 #pragma once
 #include "CSafeQueue.h"
 
+#define BUFFER_SIZE 1024 * 1024
+
 class CProducer
 {
 public:
 	CProducer(CSafeQueue<CString>* jobQueue, CString& inputDir);
 	~CProducer();
-	void Stop();
-	void Quit();
-	void Start();
-
 	UINT Run();
+
 private:
+	BYTE* mBuffer;
 	CSafeQueue<CString>* mJobQueue;
 	CString mInputDir;
-	BOOL mBQuitSignal;
-	BOOL mBStopSignal;
+	CONDITION_VARIABLE* mCV;
 };
 

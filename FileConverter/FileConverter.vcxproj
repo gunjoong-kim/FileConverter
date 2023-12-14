@@ -184,12 +184,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CBiConverter.h" />
-    <ClInclude Include="CBinToTxtConverter.h" />
     <ClInclude Include="AConsumer.h" />
     <ClInclude Include="CConverter.h" />
     <ClInclude Include="CProducer.h" />
     <ClInclude Include="CSafeQueue.h" />
-    <ClInclude Include="CTxtToBinConverter.h" />
     <ClInclude Include="CViewer.h" />
     <ClInclude Include="ErrListDlg.h" />
     <ClInclude Include="FileConverter.h" />
@@ -201,11 +199,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CBiConverter.cpp" />
-    <ClCompile Include="CBinToTxtConverter.cpp" />
     <ClCompile Include="AConsumer.cpp" />
     <ClCompile Include="CConverter.cpp" />
     <ClCompile Include="CProducer.cpp" />
-    <ClCompile Include="CTxtToBinConverter.cpp" />
     <ClCompile Include="CViewer.cpp" />
     <ClCompile Include="ErrListDlg.cpp" />
     <ClCompile Include="FileConverter.cpp" />
